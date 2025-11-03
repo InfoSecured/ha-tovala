@@ -1,9 +1,15 @@
 {
   "title": "Tovala",
   "config": {
-    "step": { "user": { "title": "Sign in", "description": "Enter your Tovala credentials." } },
+    "step": { 
+      "user": { 
+        "title": "Sign in", 
+        "description": "Enter your Tovala credentials." 
+      } 
+    },
     "error": {
       "auth": "Login failed. Check email/password.",
+      "cannot_connect": "Cannot connect to Tovala servers. Check your network connection.",
       "no_ovens_found": "Logged in but no ovens were found."
     }
   }
