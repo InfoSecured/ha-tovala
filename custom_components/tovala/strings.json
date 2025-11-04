@@ -10,7 +10,9 @@
     "error": {
       "auth": "Login failed. Check email/password.",
       "cannot_connect": "Cannot connect to Tovala servers. Check your network connection.",
-      "no_ovens_found": "Logged in but no ovens were found."
+      "rate_limit": "Too many login attempts. Please wait 30-60 minutes before trying again.",
+      "no_ovens_found": "Logged in but no ovens were found.",
+      "unknown": "An unexpected error occurred. Check the logs for details."
     }
   }
 }

@@ -87,6 +87,11 @@ class TovalaClient:
                     txt = await r.text()
                     _LOGGER.debug("Login response from %s: status=%s, body=%s", base, r.status, txt[:200])
                     
+                    if r.status == 429:
+                        # Rate limited - stop immediately
+                        _LOGGER.error("Rate limited by Tovala API: %s", txt)
+                        raise TovalaApiError(f"Rate limited (HTTP 429): {txt}")
+                    
                     if r.status in (401, 403):
                         # Stop immediately on explicit auth failure
                         _LOGGER.error("Authentication failed: HTTP %s - %s", r.status, txt)
