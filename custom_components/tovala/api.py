@@ -63,12 +63,14 @@ class TovalaClient:
             _LOGGER.debug("Using provided token with base: %s", self._base)
             return
 
+        # CRITICAL: X-Tovala-AppID header is required!
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "User-Agent": "HomeAssistant-Tovala/0.1",
             "Origin": "https://my.tovala.com",
             "Referer": "https://my.tovala.com/",
+            "X-Tovala-AppID": "MyTovala",
         }
 
         last_err: Optional[Exception] = None
@@ -103,8 +105,9 @@ class TovalaClient:
                         continue
                     
                     data = await r.json()
-                    _LOGGER.debug("Login JSON response: %s", data)
+                    _LOGGER.debug("Login JSON response keys: %s", list(data.keys()))
 
+                # Support both 'token' and 'accessToken' response formats
                 token = data.get("token") or data.get("accessToken") or data.get("jwt")
                 if not token:
                     last_err = TovalaAuthError("No token returned from getToken")
@@ -119,6 +122,9 @@ class TovalaClient:
                 
             except TovalaAuthError:
                 # Do not try other bases if credentials are wrong
+                raise
+            except TovalaApiError:
+                # Also stop on rate limits
                 raise
             except ClientError as e:
                 last_err = e
@@ -137,7 +143,10 @@ class TovalaClient:
 
     async def _auth_headers(self) -> Dict[str, str]:
         await self.login()
-        return {"Authorization": f"Bearer {self._token}"}
+        return {
+            "Authorization": f"Bearer {self._token}",
+            "X-Tovala-AppID": "MyTovala",
+        }
 
     async def _get_json(self, path: str, **fmt) -> Any:
         if not self._base:
