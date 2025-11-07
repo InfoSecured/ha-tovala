@@ -30,11 +30,15 @@ class TovalaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         
         try:
             data = await self.client.oven_status(self.oven_id)
-            _LOGGER.debug("Oven status: %s", data)
-            
-            # Expected keys (example): {"state":"cooking|idle", "remaining":123, "mode":"air_fry", ...}
+            _LOGGER.info("Oven status received: %s", data)
+
+            # Status response format: {"state":"idle"|"cooking", "remote_control_enabled":true, ...}
+            # When cooking, may include "remaining" or "time_remaining" fields
+            state = data.get("state", "unknown")
             remaining = data.get("remaining") or data.get("time_remaining") or 0
-            
+
+            _LOGGER.debug("Parsed state=%s, remaining=%s", state, remaining)
+
             # Fire event once when remaining crosses to 0
             if (self._last_reported_remaining and self._last_reported_remaining > 0) and int(remaining) == 0:
                 _LOGGER.info("Timer finished for oven %s", self.oven_id)
@@ -42,10 +46,10 @@ class TovalaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     "oven_id": self.oven_id,
                     "data": data
                 })
-            
+
             self._last_reported_remaining = int(remaining)
             return data
-            
+
         except Exception as err:
             _LOGGER.error("Error fetching oven status: %s", err, exc_info=True)
             raise
