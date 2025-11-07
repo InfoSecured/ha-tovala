@@ -262,3 +262,51 @@ class TovalaClient:
         except Exception as e:
             _LOGGER.error("Failed to fetch oven status: %s", e, exc_info=True)
             raise TovalaApiError(f"Failed to fetch oven status: {str(e)}")
+
+    async def meal_details(self, meal_id: str) -> Optional[Dict[str, Any]]:
+        """Fetch meal details by ID."""
+        if not meal_id:
+            _LOGGER.warning("meal_details called with empty meal_id")
+            return None
+
+        if not self._user_id:
+            raise TovalaApiError("No user_id available - login first")
+
+        _LOGGER.debug("Fetching meal details for meal %s (user %s)", meal_id, self._user_id)
+
+        try:
+            path = f"/v1/users/{self._user_id}/meals/{meal_id}"
+            data = await self._get_json(path)
+            _LOGGER.debug("Meal details endpoint returned: %s", data)
+
+            # Response format: {"meal": {...}}
+            if isinstance(data, dict) and "meal" in data:
+                return data["meal"]
+            return data
+        except Exception as e:
+            _LOGGER.warning("Failed to fetch meal details for meal_id %s: %s", meal_id, e)
+            return None
+
+    async def cooking_history(self, oven_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Fetch cooking history for an oven."""
+        if not oven_id:
+            _LOGGER.warning("cooking_history called with empty oven_id")
+            return []
+
+        if not self._user_id:
+            raise TovalaApiError("No user_id available - login first")
+
+        _LOGGER.debug("Fetching cooking history for oven %s (user %s)", oven_id, self._user_id)
+
+        try:
+            path = f"/v0/users/{self._user_id}/ovens/{oven_id}/cook/history"
+            data = await self._get_json(path)
+            _LOGGER.debug("Cooking history endpoint returned: %s entries", len(data) if isinstance(data, list) else "unknown")
+
+            if isinstance(data, list):
+                # Return limited results (most recent first)
+                return data[:limit]
+            return []
+        except Exception as e:
+            _LOGGER.warning("Failed to fetch cooking history: %s", e)
+            return []
